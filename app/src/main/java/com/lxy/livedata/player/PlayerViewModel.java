@@ -6,11 +6,17 @@ import android.arch.lifecycle.MutableLiveData;
 import android.arch.lifecycle.OnLifecycleEvent;
 import android.arch.lifecycle.ViewModel;
 import android.content.Context;
+import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.Toast;
 
 import com.lxy.livedata.PlayerLayout;
+import com.lxy.livedata.utils.WindowUtils;
 import com.tencent.rtmp.ITXLivePlayListener;
 import com.tencent.rtmp.TXLiveConstants;
 import com.tencent.rtmp.TXVodPlayConfig;
@@ -30,6 +36,8 @@ public class PlayerViewModel extends ViewModel implements LifecycleObserver, ITX
     private Context mContext;
     private PlayerLayout playerLayout;
     private MutableLiveData<String> liveData;
+    // 屏幕UI可见性
+    private int mScreenUiVisibility;
 
     public PlayerViewModel(View view, MutableLiveData<String> liveData) {
         this.liveData = liveData;
@@ -68,7 +76,7 @@ public class PlayerViewModel extends ViewModel implements LifecycleObserver, ITX
         });
 
         playerLayout.mViewBinding.tvFullScreen.setOnClickListener(view -> {
-            Toast.makeText(mContext, "full", Toast.LENGTH_SHORT).show();
+            _toggleFullScreen();
         });
     }
 
@@ -145,4 +153,62 @@ public class PlayerViewModel extends ViewModel implements LifecycleObserver, ITX
     public void onNetStatus(Bundle bundle) {
 
     }
+
+    /**
+     * 全屏切换，点击全屏按钮
+     */
+    private void _toggleFullScreen() {
+        if (WindowUtils.getScreenOrientation(playerLayout.mAttachActivity) == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE) {
+            // 横屏模式，点击竖屏
+            playerLayout.mAttachActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        } else {
+            // 竖屏模式，点击横屏
+            playerLayout.mAttachActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        }
+    }
+
+    public void configurationChanged(Configuration newConfig) {
+        // 沉浸式只能在SDK19以上实现
+        if (Build.VERSION.SDK_INT >= 14) {
+            if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                // 获取关联 Activity 的 DecorView
+                View decorView = playerLayout.mAttachActivity.getWindow().getDecorView();
+                // 保存旧的配置
+                mScreenUiVisibility = decorView.getSystemUiVisibility();
+                // 沉浸式使用这些Flag
+                decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
+                        View.SYSTEM_UI_FLAG_FULLSCREEN |
+                        View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
+                        View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION |
+                        View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
+                        View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                );
+                playerLayout.mAttachActivity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+            } else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
+                View decorView = playerLayout.mAttachActivity.getWindow().getDecorView();
+                // 还原
+                decorView.setSystemUiVisibility(mScreenUiVisibility);
+                playerLayout.mAttachActivity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+            }
+        }
+    }
+
+    /**
+     * 改变视频布局高度
+     *
+     * @param isFullscreen
+     */
+    private void _changeHeight(boolean isFullscreen) {
+
+//        ViewGroup.LayoutParams layoutParams = getLayoutParams();
+//        if (isFullscreen) {
+//            // 高度扩展为横向全屏
+//            layoutParams.height = mWidthPixels;
+//        } else {
+//            // 还原高度
+//            layoutParams.height = mInitHeight;
+//        }
+//        setLayoutParams(layoutParams);
+    }
+
 }

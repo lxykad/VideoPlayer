@@ -37,7 +37,8 @@
                 android:gravity="center"
                 android:paddingLeft="@dimen/dp_10"
                 android:paddingRight="@dimen/dp_10"
-                android:src="@mipmap/live_pause_new" />
+                android:src="@mipmap/live_pause_new"
+                android:visibility="gone" />
 
             <ImageView
                 android:id="@+id/tv_full_screen"
