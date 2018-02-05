@@ -13,8 +13,10 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.FrameLayout;
 import android.widget.Toast;
 
+import com.blankj.utilcode.util.ScreenUtils;
 import com.lxy.livedata.PlayerLayout;
 import com.lxy.livedata.utils.WindowUtils;
 import com.tencent.rtmp.ITXLivePlayListener;
@@ -38,6 +40,8 @@ public class PlayerViewModel extends ViewModel implements LifecycleObserver, ITX
     private MutableLiveData<String> liveData;
     // 屏幕UI可见性
     private int mScreenUiVisibility;
+    private FrameLayout.LayoutParams mLayoutParams;
+    private boolean mIsFullScreen;
 
     public PlayerViewModel(View view, MutableLiveData<String> liveData) {
         this.liveData = liveData;
@@ -184,12 +188,16 @@ public class PlayerViewModel extends ViewModel implements LifecycleObserver, ITX
                         View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
                 );
                 playerLayout.mAttachActivity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+                mIsFullScreen = true;
             } else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
                 View decorView = playerLayout.mAttachActivity.getWindow().getDecorView();
                 // 还原
                 decorView.setSystemUiVisibility(mScreenUiVisibility);
                 playerLayout.mAttachActivity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+                mIsFullScreen = false;
             }
+
+            _changeHeight(mIsFullScreen);
         }
     }
 
@@ -200,15 +208,18 @@ public class PlayerViewModel extends ViewModel implements LifecycleObserver, ITX
      */
     private void _changeHeight(boolean isFullscreen) {
 
-//        ViewGroup.LayoutParams layoutParams = getLayoutParams();
-//        if (isFullscreen) {
-//            // 高度扩展为横向全屏
-//            layoutParams.height = mWidthPixels;
-//        } else {
-//            // 还原高度
-//            layoutParams.height = mInitHeight;
-//        }
-//        setLayoutParams(layoutParams);
-    }
+        mLayoutParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
 
+        if (isFullscreen) {
+            // 高度扩展为横向全屏
+            mLayoutParams.height = ScreenUtils.getScreenHeight();//1080
+            //  mLayoutParams.width = ScreenUtils.getScreenWidth();
+
+        } else {
+            // 还原高度
+            mLayoutParams.width = ScreenUtils.getScreenWidth();
+            // mLayoutParams.width = (int) (ScreenUtils.getScreenWidth() * 9 / 16f);
+        }
+        playerLayout.mViewBinding.txVideoView.setLayoutParams(mLayoutParams);
+    }
 }
